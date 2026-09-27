@@ -1,0 +1,11 @@
+package br.com.minhadieta.app;
+import android.Manifest;import android.app.*;import android.os.*;import android.webkit.*;import android.content.*;import org.json.*;import java.util.*;
+public class MainActivity extends Activity{
+ WebView w; public void onCreate(Bundle b){super.onCreate(b);createChannel();w=new WebView(this);w.getSettings().setJavaScriptEnabled(true);w.getSettings().setDomStorageEnabled(true);w.addJavascriptInterface(new Bridge(),"Android");w.setWebViewClient(new WebViewClient());w.loadUrl("file:///android_asset/www/index.html");setContentView(w);}
+ void createChannel(){if(Build.VERSION.SDK_INT>=26){NotificationChannel c=new NotificationChannel("meals","Lembretes de refeições",NotificationManager.IMPORTANCE_HIGH);c.setDescription("Horários do plano alimentar");getSystemService(NotificationManager.class).createNotificationChannel(c);}}
+ class Bridge{@JavascriptInterface public void enableNotifications(){runOnUiThread(()->{if(Build.VERSION.SDK_INT>=33)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},10);});}
+ @JavascriptInterface public void scheduleAll(String json){try{JSONObject o=new JSONObject(json);String[][] a={{"breakfast","Café da manhã"},{"morning","Lanche da manhã"},{"lunch","Almoço"},{"afternoon","Lanche da tarde"},{"dinner","Jantar"}};for(int i=0;i<a.length;i++){String[] hm=o.getString(a[i][0]).split(":");schedule(i+101,Integer.parseInt(hm[0]),Integer.parseInt(hm[1]),a[i][1]);}}catch(Exception e){}}
+ }
+ void schedule(int id,int h,int m,String name){AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);Intent in=new Intent(this,MealReceiver.class).putExtra("name",name).putExtra("id",id);PendingIntent pi=PendingIntent.getBroadcast(this,id,in,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);Calendar c=Calendar.getInstance();c.set(Calendar.HOUR_OF_DAY,h);c.set(Calendar.MINUTE,m);c.set(Calendar.SECOND,0);if(c.getTimeInMillis()<=System.currentTimeMillis())c.add(Calendar.DAY_OF_YEAR,1);if(Build.VERSION.SDK_INT>=31&&!am.canScheduleExactAlarms())am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,c.getTimeInMillis(),pi);else am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,c.getTimeInMillis(),pi);}
+ @Override public void onBackPressed(){if(w.canGoBack())w.goBack();else super.onBackPressed();}
+}
