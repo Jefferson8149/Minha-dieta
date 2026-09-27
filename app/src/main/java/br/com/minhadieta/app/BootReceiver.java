@@ -1,0 +1,1 @@
+package br.com.minhadieta.app;import android.content.*;public class BootReceiver extends BroadcastReceiver{public void onReceive(Context c,Intent i){/* Os horários são reagendados ao abrir o app após reiniciar. */}}
